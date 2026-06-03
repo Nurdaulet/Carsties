@@ -22,15 +22,17 @@ public class AuctionsController : ControllerBase
     }
     
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<AuctionDto>>> GetAuctions()
+    public async Task<ActionResult<IEnumerable<AuctionDto>>> GetAllAuctions(string date)
     {
-        var auctions = await _context.Auctions
-            .Include(a => a.Item)
-            .OrderBy(x => x.Item.Make)
-            .ProjectTo<AuctionDto>(_mapper.ConfigurationProvider)
-            .ToListAsync();
+        var query = _context.Auctions.OrderBy(a => a.Item.Make).AsQueryable();
 
-        return Ok(auctions);
+        if (!string.IsNullOrEmpty(date))
+        {
+            query = query.Where(a => 
+            a.UpdatedAt.CompareTo(DateTime.Parse(date).ToUniversalTime()) > 0);
+        }
+
+        return await query.ProjectTo<AuctionDto>(_mapper.ConfigurationProvider).ToListAsync();
     }
 
     [HttpGet("{id}")]
